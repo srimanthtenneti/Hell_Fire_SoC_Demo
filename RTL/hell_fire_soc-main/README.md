@@ -8,7 +8,12 @@ Issues:
    
 Implementation Status :
 1. FPGA - Done
-2. ASIC - Done 
+2. ASIC - Done
+
+Note 
+1. This implementation requires the ARM Cortex M0 Design Start IP which can be downloaded from the following link https://www.arm.com/resources/designstart.
+2. This implementation would need the Cortex M0 integration and logic files.
+   
 
 # **Introduction**
 
