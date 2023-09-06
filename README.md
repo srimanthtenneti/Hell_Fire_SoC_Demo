@@ -1,6 +1,19 @@
-# Hell Fire SoC Documentation 
 
+# Hell Fire SoC Documentation
 
+Version: 1.0 
+Issues: 
+1. Array IP HRESP Width Mismatch - Severity - Minor - Level - IP
+2. Array IP Reset Remap - Severity - Minor - Level - SoC Top
+   
+Implementation Status :
+1. FPGA - Done
+2. ASIC - Done
+
+Note 
+1. This implementation requires the ARM Cortex M0 Design Start IP which can be downloaded from the following link https://www.arm.com/resources/designstart.
+2. This implementation would need the Cortex M0 integration and logic files.
+   
 
 # **Introduction**
 
@@ -403,4 +416,3 @@ To test simultaneously validates our Memory and Array peripherals. Now to valida
 > **Department: ECE - University of Cincinnati**
 
 <br/>
-
