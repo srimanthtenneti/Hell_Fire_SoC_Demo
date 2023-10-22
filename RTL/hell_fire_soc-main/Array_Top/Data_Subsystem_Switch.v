@@ -148,204 +148,211 @@ reg sel5Q;
 reg sel6Q;
 reg sel7Q;
 
+// Pipe Addition 
+reg [2:0] rptr_in_pipe; 
+
+always @ (posedge clk) begin
+   rptr_in_pipe <= rptr_in; 
+end
+
 // Data Decoding 
-always @ (rptr_in or resetn or select or data) begin // Added Data to Sense List 
+always @ (rptr_in_pipe or resetn or select) begin // Added Data to Sense List 
   if (~resetn) 
     begin
-      dataout0Q <= 0; 
-      dataout1Q <= 0; 
-      dataout2Q <= 0; 
-      dataout3Q <= 0; 
-      dataout4Q <= 0; 
-      dataout5Q <= 0; 
-      dataout6Q <= 0; 
-      dataout7Q <= 0; 
-      sel0Q <= 0; 
-      sel1Q <= 0;
-      sel2Q <= 0;
-      sel3Q <= 0;
-      sel4Q <= 0;
-      sel5Q <= 0;
-      sel6Q <= 0;
-      sel7Q <= 0;
+      dataout0Q = 0; 
+      dataout1Q = 0; 
+      dataout2Q = 0; 
+      dataout3Q = 0; 
+      dataout4Q = 0; 
+      dataout5Q = 0; 
+      dataout6Q = 0; 
+      dataout7Q = 0; 
+      sel0Q = 0; 
+      sel1Q = 0;
+      sel2Q = 0;
+      sel3Q = 0;
+      sel4Q = 0;
+      sel5Q = 0;
+      sel6Q = 0;
+      sel7Q = 0;
     end
   else 
     begin
       if (select) 
         begin
-          case (rptr_in) 
+          case (rptr_in_pipe) 
             // West 1
             3'b000 : begin
-                dataout0Q <= data; 
-                dataout1Q <= 0; 
-                dataout2Q <= 0; 
-                dataout3Q <= 0; 
-                dataout4Q <= 0; 
-                dataout5Q <= 0; 
-                dataout6Q <= 0; 
-                dataout7Q <= 0; 
-                sel0Q <= 1; 
-                sel1Q <= 0;
-                sel2Q <= 0;
-                sel3Q <= 0;
-                sel4Q <= 0;
-                sel5Q <= 0;
-                sel6Q <= 0;
-                sel7Q <= 0;    
+                dataout0Q = data; 
+                dataout1Q = 0; 
+                dataout2Q = 0; 
+                dataout3Q = 0; 
+                dataout4Q = 0; 
+                dataout5Q = 0; 
+                dataout6Q = 0; 
+                dataout7Q = 0; 
+                sel0Q = 1; 
+                sel1Q = 0;
+                sel2Q = 0;
+                sel3Q = 0;
+                sel4Q = 0;
+                sel5Q = 0;
+                sel6Q = 0;
+                sel7Q = 0;    
             end
             // West 2
             3'b001 : begin
-                dataout0Q <= 0; 
-                dataout1Q <= data; 
-                dataout2Q <= 0; 
-                dataout3Q <= 0; 
-                dataout4Q <= 0; 
-                dataout5Q <= 0; 
-                dataout6Q <= 0; 
-                dataout7Q <= 0; 
-                sel0Q <= 0; 
-                sel1Q <= 1;
-                sel2Q <= 0;
-                sel3Q <= 0;
-                sel4Q <= 0;
-                sel5Q <= 0;
-                sel6Q <= 0;
-                sel7Q <= 0;  
+                dataout0Q = 0; 
+                dataout1Q = data; 
+                dataout2Q = 0; 
+                dataout3Q = 0; 
+                dataout4Q = 0; 
+                dataout5Q = 0; 
+                dataout6Q = 0; 
+                dataout7Q = 0; 
+                sel0Q = 0; 
+                sel1Q = 1;
+                sel2Q = 0;
+                sel3Q = 0;
+                sel4Q = 0;
+                sel5Q = 0;
+                sel6Q = 0;
+                sel7Q = 0;  
             end  
             // West 3
             3'b010 : begin
-                dataout0Q <= 0; 
-                dataout1Q <= 0; 
-                dataout2Q <= data; 
-                dataout3Q <= 0; 
-                dataout4Q <= 0; 
-                dataout5Q <= 0; 
-                dataout6Q <= 0; 
-                dataout7Q <= 0; 
-                sel0Q <= 0; 
-                sel1Q <= 0;
-                sel2Q <= 1;
-                sel3Q <= 0;
-                sel4Q <= 0;
-                sel5Q <= 0;
-                sel6Q <= 0;
-                sel7Q <= 0;  
+                dataout0Q = 0; 
+                dataout1Q = 0; 
+                dataout2Q = data; 
+                dataout3Q = 0; 
+                dataout4Q = 0; 
+                dataout5Q = 0; 
+                dataout6Q = 0; 
+                dataout7Q = 0; 
+                sel0Q = 0; 
+                sel1Q = 0;
+                sel2Q = 1;
+                sel3Q = 0;
+                sel4Q = 0;
+                sel5Q = 0;
+                sel6Q = 0;
+                sel7Q = 0;  
             end  
             // West 4
             3'b011 : begin
-                dataout0Q <= 0; 
-                dataout1Q <= 0; 
-                dataout2Q <= 0; 
-                dataout3Q <= data; 
-                dataout4Q <= 0; 
-                dataout5Q <= 0; 
-                dataout6Q <= 0; 
-                dataout7Q <= 0; 
-                sel0Q <= 0; 
-                sel1Q <= 0;
-                sel2Q <= 0;
-                sel3Q <= 1;
-                sel4Q <= 0;
-                sel5Q <= 0;
-                sel6Q <= 0;
-                sel7Q <= 0;  
+                dataout0Q = 0; 
+                dataout1Q = 0; 
+                dataout2Q = 0; 
+                dataout3Q = data; 
+                dataout4Q = 0; 
+                dataout5Q = 0; 
+                dataout6Q = 0; 
+                dataout7Q = 0; 
+                sel0Q = 0; 
+                sel1Q = 0;
+                sel2Q = 0;
+                sel3Q = 1;
+                sel4Q = 0;
+                sel5Q = 0;
+                sel6Q = 0;
+                sel7Q = 0;  
             end 
             // North 1 
             3'b100 : begin
-                dataout0Q <= 0; 
-                dataout1Q <= 0; 
-                dataout2Q <= 0; 
-                dataout3Q <= 0; 
-                dataout4Q <= data; 
-                dataout5Q <= 0; 
-                dataout6Q <= 0; 
-                dataout7Q <= 0; 
-                sel0Q <= 0; 
-                sel1Q <= 0;
-                sel2Q <= 0;
-                sel3Q <= 0;
-                sel4Q <= 1;
-                sel5Q <= 0;
-                sel6Q <= 0;
-                sel7Q <= 0;  
+                dataout0Q = 0; 
+                dataout1Q = 0; 
+                dataout2Q = 0; 
+                dataout3Q = 0; 
+                dataout4Q = data; 
+                dataout5Q = 0; 
+                dataout6Q = 0; 
+                dataout7Q = 0; 
+                sel0Q = 0; 
+                sel1Q = 0;
+                sel2Q = 0;
+                sel3Q = 0;
+                sel4Q = 1;
+                sel5Q = 0;
+                sel6Q = 0;
+                sel7Q = 0;  
             end  
             // North 2 
             3'b101 : begin
-                dataout0Q <= 0; 
-                dataout1Q <= 0; 
-                dataout2Q <= 0; 
-                dataout3Q <= 0; 
-                dataout4Q <= 0; 
-                dataout5Q <= data; 
-                dataout6Q <= 0; 
-                dataout7Q <= 0; 
-                sel0Q <= 0; 
-                sel1Q <= 0;
-                sel2Q <= 0;
-                sel3Q <= 0;
-                sel4Q <= 0;
-                sel5Q <= 1;
-                sel6Q <= 0;
-                sel7Q <= 0;  
+                dataout0Q = 0; 
+                dataout1Q = 0; 
+                dataout2Q = 0; 
+                dataout3Q = 0; 
+                dataout4Q = 0; 
+                dataout5Q = data; 
+                dataout6Q = 0; 
+                dataout7Q = 0; 
+                sel0Q = 0; 
+                sel1Q = 0;
+                sel2Q = 0;
+                sel3Q = 0;
+                sel4Q = 0;
+                sel5Q = 1;
+                sel6Q = 0;
+                sel7Q = 0;  
             end  
             // North 3 
             3'b110 : begin
-                dataout0Q <= 0; 
-                dataout1Q <= 0; 
-                dataout2Q <= 0; 
-                dataout3Q <= 0; 
-                dataout4Q <= 0; 
-                dataout5Q <= 0; 
-                dataout6Q <= data; 
-                dataout7Q <= 0; 
-                sel0Q <= 0; 
-                sel1Q <= 0;
-                sel2Q <= 0;
-                sel3Q <= 0;
-                sel4Q <= 0;
-                sel5Q <= 0;
-                sel6Q <= 1;
-                sel7Q <= 0;  
+                dataout0Q = 0; 
+                dataout1Q = 0; 
+                dataout2Q = 0; 
+                dataout3Q = 0; 
+                dataout4Q = 0; 
+                dataout5Q = 0; 
+                dataout6Q = data; 
+                dataout7Q = 0; 
+                sel0Q = 0; 
+                sel1Q = 0;
+                sel2Q = 0;
+                sel3Q = 0;
+                sel4Q = 0;
+                sel5Q = 0;
+                sel6Q = 1;
+                sel7Q = 0;  
             end  
             // North 4
             3'b111 : begin
-                dataout0Q <= 0; 
-                dataout1Q <= 0; 
-                dataout2Q <= 0; 
-                dataout3Q <= 0; 
-                dataout4Q <= 0; 
-                dataout5Q <= 0; 
-                dataout6Q <= 0; 
-                dataout7Q <= data; 
-                sel0Q <= 0; 
-                sel1Q <= 0;
-                sel2Q <= 0;
-                sel3Q <= 0;
-                sel4Q <= 0;
-                sel5Q <= 0;
-                sel6Q <= 0;
-                sel7Q <= 1;  
+                dataout0Q = 0; 
+                dataout1Q = 0; 
+                dataout2Q = 0; 
+                dataout3Q = 0; 
+                dataout4Q = 0; 
+                dataout5Q = 0; 
+                dataout6Q = 0; 
+                dataout7Q = data; 
+                sel0Q = 0; 
+                sel1Q = 0;
+                sel2Q = 0;
+                sel3Q = 0;
+                sel4Q = 0;
+                sel5Q = 0;
+                sel6Q = 0;
+                sel7Q = 1;  
             end  
           endcase
         end
       else 
         begin
-                dataout0Q <= 0; 
-                dataout1Q <= 0; 
-                dataout2Q <= 0; 
-                dataout3Q <= 0; 
-                dataout4Q <= 0; 
-                dataout5Q <= 0; 
-                dataout6Q <= 0; 
-                dataout7Q <= 0; 
-                sel0Q <= 0; 
-                sel1Q <= 0;
-                sel2Q <= 0;
-                sel3Q <= 0;
-                sel4Q <= 0;
-                sel5Q <= 0;
-                sel6Q <= 0;
-                sel7Q <= 0;  
+                dataout0Q = 0; 
+                dataout1Q = 0; 
+                dataout2Q = 0; 
+                dataout3Q = 0; 
+                dataout4Q = 0; 
+                dataout5Q = 0; 
+                dataout6Q = 0; 
+                dataout7Q = 0; 
+                sel0Q = 0; 
+                sel1Q = 0;
+                sel2Q = 0;
+                sel3Q = 0;
+                sel4Q = 0;
+                sel5Q = 0;
+                sel6Q = 0;
+                sel7Q = 0;  
         end
 
     end

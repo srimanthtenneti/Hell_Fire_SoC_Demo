@@ -3,8 +3,8 @@
 // Standard : AMBA3 AHB-Lite 
 // Author: Srimanth Tenneti 
 // Date: 22th August 2023 
-// Version : 0.03
-// Bugs : 
+// Version : 0.01
+// Bugs : HREADYOUT and HRESP Signal Issues
 // **************************************************************************
 
 
