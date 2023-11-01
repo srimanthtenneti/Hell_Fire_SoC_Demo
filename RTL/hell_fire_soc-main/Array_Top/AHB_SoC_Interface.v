@@ -1,364 +1,305 @@
-// **************************************************************************
-// Design : AHB SoC Interface Top 
-// Standard : AMBA3 AHB-Lite 
+// ************************************************************
+// Design : Hell Fire SoC Top 
 // Author: Srimanth Tenneti 
-// Date: 22th August 2023 
-// Version : 0.01
-// Bugs : HREADYOUT and HRESP Signal Issues
-// **************************************************************************
+// Date: 27th August 2023 
+// Version : 0.03 
+// Additions : Automatic Units Reset 
+//               |-> DDS, Array, MIF 
+// ************************************************************
 
+module Hell_Fire_SoC_Top_Wrapper_V3 #(parameter W = 32)(
+   // Global Clock and Reset 
+   input wire clk, 
+   input wire reset, 
 
-// HRESP -> 0 -> OKAY
-// HRESP -> 1 -> ERROR
+   // LED Out 
+   output wire [3:0] LED, 
 
-module AHB_Soc_Interface #(parameter W = 32)(
-    
-    // Global Clock and Reset
-    input wire HCLK, 
-    input wire HRESETn, 
-
-    // Control Signals 
-    input wire HSEL, 
-    input wire HWRITE, 
-    input wire HMASTLOCK,  
-    
-    input wire [1:0] HTRANS, 
-    input wire [2:0] HBURST, 
-    input wire [2:0] HSIZE, 
-    
-    // Address and Data  
-    input wire [W-1:0] HWDATA, 
-    
-    // Response
-    output wire [W-1:0] HRDATA, // Done
-    output wire HREADYOUT,    // Done
-    output wire HRESP   // Done
- 
+   // Debug 
+   input wire  TDI, 
+   input wire  TCK, 
+   input wire  TMS, 
+   output wire TDO
 );
 
-// **************************************************************************
-//      Address Phase Signals
-// **************************************************************************
- 
+// Clocking 
+wire fclk; // Free Running Clock 
+assign fclk = clk; 
 
-reg Aphase_HSEL; 
-reg Aphase_HSEL1; 
+wire resetn = reset; 
 
-reg Aphase_HWRITE; 
-reg Aphase_HWRITE1; 
+// MUX2CPU Response and Data
+wire mux2cpu_hready; 
+wire [W - 1 : 0] mux2cpu_hrdata; 
 
-reg [1:0] Aphase_HTRANS; 
-reg [1:0] Aphase_HTRANS1; 
+// Mux Select 
+wire [1:0] muxsel; 
 
+// Peripheral Select 
+wire hsel_memory; 
+wire hsel_gpio; 
+wire hsel_nomap;
+wire hsel_array; 
 
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-   begin
-     Aphase_HSEL <= 0;
-     Aphase_HSEL1 <= 0;
+// Peripheral HREADY 
+wire hready_memory; 
+wire hready_gpio; 
+wire hready_array; 
+wire hready_nomap; 
+
+// Peripheral Data Connections 
+wire [W - 1  : 0] hrdata_memory; 
+wire [W - 1  : 0] hrdata_gpio; 
+wire [W - 1  : 0] hrdata_array; 
+wire [W - 1  : 0] hrdata_nomap; 
+
+// Side Bank Signals 
+wire lockup; 
+wire lockup_reset_req; 
+wire sys_reset_req; 
+wire txev; 
+wire sleeping; 
+wire [31:0] irq; 
+
+// Interrupt Signals 
+assign irq = 0; 
+
+// Reset Sync 
+reg [4:0] reset_sync_reg; 
+
+always @ (posedge fclk or negedge resetn) begin
+   if (~resetn) begin
+      reset_sync_reg <= 0; 
    end
-   else 
-   begin
-     Aphase_HSEL1 <= HSEL;
-     Aphase_HSEL <= Aphase_HSEL1; 
-   end
-end
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-   begin
-     Aphase_HWRITE <= 0;
-     Aphase_HWRITE1 <= 0;
-   end
-   else 
-   begin
-     Aphase_HWRITE1 <= HWRITE;
-     Aphase_HWRITE <= Aphase_HWRITE1; 
-   end
-end
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-   begin
-     Aphase_HTRANS <= 0;
-     Aphase_HTRANS1 <= 0;
-   end
-   else 
-   begin
-     Aphase_HTRANS1 <= HTRANS;
-     Aphase_HTRANS <= Aphase_HTRANS1; 
-   end
-end
-
-
-
-// AHB Lite Write 
-wire write_control; 
-assign write_control = Aphase_HSEL && Aphase_HTRANS[1] && Aphase_HWRITE; 
-
-// **************************************************************************
-
-
-
-// **************************************************************************
-//     IP Stream Top -> MIF, DDS Switch, Aligners, 4x4 Array
-// **************************************************************************
-
-// OSF Data Input
-reg we; 
-
-wire [31:0] OSF_DATA_LINK;
-
-// MIF Status from Stream Top
-wire mif_empty; 
-wire mif_full; 
-
-// We controller
-wire valid; // -> We controller for the OSF
-
-reg [31:0] HWDATA_Q; 
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-     HWDATA_Q <= 0; 
-   else 
-     HWDATA_Q <= HWDATA; 
-end
-
-IP_Stream_Top stream_top_0 (
-    .clk(HCLK), 
-    .resetn(HRESETn), 
-    .we(write_control), 
-    .datain(HWDATA_Q), 
-    .dataout(OSF_DATA_LINK), 
-    .valid(valid), 
-    .master_full(mif_full), 
-    .master_empty(mif_empty)
-); 
-
-// **************************************************************************
-
-
-// **************************************************************************
-//      Output Stream FIFO (OSF) -> For AHB Read Transaction 
-// **************************************************************************
-
-wire osf_empty; 
-wire osf_full; 
-
-
-// For Response Stability
-
-reg val_Q; 
-wire valid_fall_edge; 
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-     val_Q <= 0; 
-   else 
-     val_Q <= valid; 
-end
-
-assign valid_fall_edge = ~valid && val_Q; 
-
-reg cal_Q; 
-
-wire osf_full_edge; 
-wire osf_empty_edge; 
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-     cal_Q <= 0; 
    else 
      begin
-        if (valid_fall_edge)
-          cal_Q <= 1; 
-        if (osf_empty_edge) 
-          cal_Q <= 0; 
+       reset_sync_reg[3:0] <= {reset_sync_reg[2:0], 1'b1}; 
+       reset_sync_reg[4] <= reset_sync_reg[2] & ~(sys_reset_req); 
      end
 end
 
+// CPU AHB-Lite Bus 
 
-wire osf_read_control; 
-// Fall Edge added for Stability 
-assign osf_read_control = HSEL && HTRANS[1] && ~Aphase_HWRITE  && cal_Q; 
+wire hresetn = reset_sync_reg[4]; 
+wire hmastlock_soc; 
+wire hwrite_soc; 
 
-reg [31:0] OSFOUT_Q;
-wire [31:0] OSFOUT; 
+wire [1:0] htrans_soc; 
 
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-    OSFOUT_Q <= 0; 
-   else 
-   begin
-      OSFOUT_Q <= OSFOUT; 
-   end
-end
+wire [2:0] hsize_soc; 
+wire [2:0] hburst_soc; 
 
-Circular_FIFO #(
-  .W(32), 
-  .D(8)
-  ) 
-  OSF0 (
-    .clk(HCLK), 
-    .resetn(HRESETn), 
-    .we(valid), 
-    .re(osf_read_control), 
-    .data(OSF_DATA_LINK), 
-    .fifo_full(osf_full), 
-    .fifo_empty(osf_empty), 
-    .dataout(OSFOUT)
-); 
+wire [3:0] hprot_soc; 
 
-assign HRDATA = OSFOUT_Q;
+wire [W - 1 : 0] haddr_soc; 
+wire [W - 1 : 0] hwdata_soc; 
 
-// **************************************************************************
+wire [1:0] hresp_soc = 2'b00; // No Error Response
+wire exeresp_soc = 0; 
 
 
+wire          dbg_tdo;             
+wire          dbg_tdo_nen; 
 
-// **************************************************************************
-//     FIFO Status Edge Generation 
-// **************************************************************************
+wire          dbg_swdo;                 
+wire          dbg_swdo_en; 
 
-// Master Interface FIFO (MIF) Status Edges 
-wire mif_full_edge; 
-wire mif_empty_edge; 
+wire          dbg_jtag_nsw;             
+wire          dbg_swo;  
 
-Pos_detector mif_empty_edge_0 (
-    .clk(HCLK), 
-    .resetn(HRESETn), 
-    .signal(mif_empty), 
-    .edge_(mif_empty_edge)
-); 
+wire          tdo_enable     = !dbg_tdo_nen | !dbg_jtag_nsw;
 
-
-Pos_detector mif_full_edge_0 (
-    .clk(HCLK), 
-    .resetn(HRESETn), 
-    .signal(mif_full), 
-    .edge_(mif_full_edge)
-); 
+wire          tdo_tms        = dbg_jtag_nsw         ? dbg_tdo    : dbg_swo;
+assign        TMS            = dbg_swdo_en          ? dbg_swdo   : 1'bz;
+assign        TDO            = tdo_enable           ? tdo_tms    : 1'bz;
 
 
-// Output Stream FIFO (OSF) Status Edges 
+// Debug Power Controller 
+wire cdbgpwrupack, cdbgpwrupreq; 
+assign cdbgpwrupack = cdbgpwrupreq; 
 
-Pos_detector osf_empty_edge_0 (
-    .clk(HCLK), 
-    .resetn(HRESETn), 
-    .signal(osf_empty), 
-    .edge_(osf_empty_edge)
-); 
+CORTEXM0INTEGRATION cpu0(
 
+     .FCLK(fclk),
+     .SCLK(fclk),
+     .HCLK(fclk),
+     .DCLK(fclk),
 
-Pos_detector osf_full_edge_0 (
-    .clk(HCLK), 
-    .resetn(HRESETn), 
-    .signal(osf_full), 
-    .edge_(osf_full_edge)
-); 
+     .PORESETn(reset_sync_reg[2]),
+     .DBGRESETn(reset_sync_reg[3]),
+     .HRESETn(hresetn),
 
-// **************************************************************************
+     .SWCLKTCK(TCK),
+     .nTRST(1'b1),
 
+     // AHB-LITE MASTER PORT
+     .HADDR(haddr_soc),
+     .HBURST(hburst_soc),
+     .HMASTLOCK(hmastlock_soc),
+     .HPROT(hprot_soc),
+     .HSIZE(hsize_soc),
+     .HTRANS(htrans_soc),
+     .HWDATA(hwdata_soc),
+     .HWRITE(hwrite_soc),
+     .HRDATA(mux2cpu_hrdata),
+     .HREADY(mux2cpu_hready),
+     .HRESP(hresp_soc),
+     .HMASTER(),
 
-
-// **************************************************************************
-//     MIF Write Enable Handler +++
-// **************************************************************************
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-     we = 0; 
-    else 
-      begin
-        if (write_control && ~mif_full_edge) // -> !!! Check this later !!!
-          we = 1; 
-        if (mif_full_edge) 
-          we = 0;  
-      end
-end
-
-// MIF Write Output 
-assign we_out = we; 
-
-// **************************************************************************
-
-
-
-
-// **************************************************************************
-//    HREADYOUT Handler 
-// **************************************************************************
-
-reg HRDY; 
-
-wire dataphase; 
-assign dataphase = (Aphase_HSEL1 && Aphase_HTRANS1[1]); 
-
-reg calZ; 
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-    calZ <= 0; 
-   else 
-     if (osf_full_edge)
-    calZ <= 1;  
+     // CODE SEQUENTIALITY AND SPECULATION
+     .CODENSEQ(),
+     .CODEHINTDE(),
+     .SPECHTRANS(),
      
-end  
+     // DEBUG
+     .SWDITMS(TMS),
+     .TDI(TDI),
+     .SWDO(dbg_swdo),
+     .SWDOEN(dbg_swdo_en),
+     .TDO(dbg_tdo),
+     .nTDOEN(dbg_tdo_nen),
+     .DBGRESTART(1'b0),
+     .DBGRESTARTED(),
+     .EDBGRQ(1'b0),
+     .HALTED(),
 
-always @ (posedge HCLK or negedge HRESETn) begin
-  if (~HRESETn) 
-    HRDY <= 1; 
-  else 
-    begin
-       if (mif_full_edge | dataphase) 
-          HRDY <= 0; 
-       else 
-          HRDY <= 1;
-       if ((calZ && ~dataphase))
-          HRDY <= 1; 
-    end
-end
+     // MISC
+     .NMI(1'b0),
+     .IRQ(irq),
+     .TXEV(),
+     .RXEV(1'b0),
+     .LOCKUP(lockup),
+     .SYSRESETREQ(sys_reset_req),
+     .STCALIB({1'b1, 1'b0, 24'h007A11F}),
+     .STCLKEN(1'b0),
+     .IRQLATENCY(8'h00),
+     .ECOREVNUM(28'h0), 
 
-assign HREADYOUT = HRDY; 
+     // POWER MANAGEMENT
+     .GATEHCLK(),
+     .SLEEPING(),
+     .SLEEPDEEP(),
+     .WAKEUP(),
+     .WICSENSE(),
+     .SLEEPHOLDREQn(1'b1),
+     .SLEEPHOLDACKn(),
+     .WICENREQ(1'b0),
+     .WICENACK(),
+     .CDBGPWRUPREQ(cdbgpwrupreq),
+     .CDBGPWRUPACK(cdbgpwrupack),
+     // SCAN IO
+     .SE(1'b0),
+     .RSTBYPASS(1'b0)
+);
 
-// **************************************************************************
+AHBDCD Peripheral_Decoder (
+    // Input Address
+   .HADDR(haddr_soc), 
+    // Peripheral Select 
+   .hsel_s0(hsel_memory), 
+   .hsel_s1(hsel_gpio), 
+   .hsel_s2(hsel_array), 
+   .hsel_s3(),
+   .hsel_nomap(hsel_nomap),
+    // Mux Select  
+   .mux_sel_out(muxsel)  
+); 
+
+AHBMUX Peripheral_MUX(
+  // Clock and Reset 
+  . HCLK(fclk), 
+  . HRESETn(hresetn), 
+  // Mux Select Genenrated by decoder 
+  .mux_sel(muxsel), 
+  // HRDATA Slaves 
+  .hrdata_s0(hrdata_memory), 
+  .hrdata_s1(hrdata_gpio), 
+  .hrdata_s2(hrdata_array), 
+  .hrdata_s3(), 
+  .hrdata_nomap(hrdata_nomap), 
+  // HREADY Slaves 
+  . hready_s0(hready_memory), 
+  . hready_s1(hready_gpio), 
+  . hready_s2(hready_array), 
+  . hready_s3(), 
+  . hready_nomap(hready_nomap), 
+  // To Master 
+  .hrdata_out(mux2cpu_hrdata), 
+  .hready_out(mux2cpu_hready)
+
+); 
+
+// ***************************************************
+//     AHB Peripherals 
+// ***************************************************
 
 
+// SRAM - Device0
+AHB2SRAM SRAM_Bank0 (
+    // Clock and Reset
+    .HCLK(fclk), 
+    .HRESETn(hresetn), 
+    // Address and Control 
+    .HSEL(hsel_memory), 
+    .HWRITE(hwrite_soc), 
+    .HREADY(mux2cpu_hready), 
+    .HMASTLOCK(), 
+    .HADDR(haddr_soc), 
+    .HTRANS(htrans_soc), 
+    .HSIZE(hsize_soc), 
+    .HBURST(hburst_soc), 
+    // Data 
+    .HWDATA(hwdata_soc), 
+    .HRDATA(hrdata_memory), 
+    // Response 
+    .HRESP(), 
+    .HREADYOUT(hready_memory)
+); 
 
-// **************************************************************************
-//    HRESP Handler 
-// **************************************************************************
+// GPIO Bank - Device1
+AHB2IO IO_Bank0 (
+    // Global Clock and Reset
+    .HCLK(fclk), 
+    .HRESETn(hresetn), 
+    // AHB Control Signals 
+    .HSEL(hsel_gpio), 
+    .HWRITE(hwrite_soc), 
+    .HREADY(mux2cpu_hready), 
+    .HMASTLOCK(), 
+    // Address and Data  
+    .HADDR(haddr_soc), 
+    .HWDATA(hwdata_soc), 
+    // Transaction Control 
+    .HTRANS(htrans_soc), 
+    .HBURST(hburst_soc), 
+    .HSIZE(hsize_soc), 
+    // Output and Transfer Response
+    .HRESP(), 
+    .HREADYOUT(hready_gpio), 
+    .HRDATA(hrdata_gpio), 
+    // Peripheral Control 
+    .LED(LED)
+);
 
+// Accelerator - Device2
+AHB_Soc_Interface MMA0 (
+    // Global Clock and Reset
+    .HCLK(fclk), 
+    .HRESETn(hresetn), 
+    // Control Signals 
+    .HSEL(hsel_array), 
+    .HWRITE(hwrite_soc), 
+    .HMASTLOCK(hmastlock_soc),  
+    .HTRANS(htrans_soc), 
+    .HBURST(hburst_soc), 
+    .HSIZE(hsize_soc), 
+    // Address and Data  
+    .HWDATA(hwdata_soc), 
+    // Response
+    .HRDATA(hrdata_array), // Done
+    .HREADYOUT(hready_array),    // Done
+    .HRESP()   // Done
+ 
+);
 
-reg error_Q, error_Q1; 
-
-always @ (posedge HCLK or negedge HRESETn) begin
-   if (~HRESETn) 
-   begin
-      error_Q <= 0; 
-      error_Q1 <= 0;
-   end
-   else 
-      begin
-        if (osf_empty_edge && HSEL) 
-           error_Q <= 1;
-        if (mif_full_edge && HSEL) 
-           error_Q <= 0; 
-        error_Q1 <= error_Q; // PIPE to compensate 1 cycle delay full and empty
-      end
-end
-
-wire osf_read_empty_error; 
-wire burst_transaction_error; 
-
-// OSF Empty Error Response
-assign osf_read_empty_error = (Aphase_HSEL && Aphase_HTRANS[1] && ~Aphase_HWRITE)  && error_Q1;
-
-// Burst Transaction Attempt from the Master 
-assign burst_transaction_error = (Aphase_HSEL && Aphase_HTRANS[0]); 
-
-// HRESP Assignment 
-assign HRESP = osf_read_empty_error | burst_transaction_error; 
-
-// **************************************************************************
 endmodule
