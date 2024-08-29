@@ -356,14 +356,6 @@ To test simultaneously validates our Memory and Array peripherals. Now to valida
 <br/>
 
 > **Role: Chief Architect, RTL Design &, Physical Implementation**
-> 
-> **LinkedIn:** [https://www.linkedin.com/in/srimanth-tenneti-662b7117b/](https://www.linkedin.com/in/srimanth-tenneti-662b7117b/)
-> 
-> **Github:** [https://github.com/srimanthtenneti](https://github.com/srimanthtenneti)
-> 
-> **Email ID**: [tennetshmail.uc.edu](https://tennetsh@mail.uc.edu)
-> 
-> **Department: ECE - University of Cincinnati**
 
 <br/>
 
@@ -376,12 +368,7 @@ To test simultaneously validates our Memory and Array peripherals. Now to valida
 <br/>
 
 > **Role: RTL Design**
-> 
-> **LinkedIn:** [https://www.linkedin.com/in/sindhura-m/](https://www.linkedin.com/in/sindhura-m/)
-> 
-> **Email ID**: [maddinsrmail.uc.edu](mailto:maddinsr@mail.uc.edu)
-> 
-> **Department: ECE - University of Cincinnati**
+
 
 <br/>
 
@@ -394,12 +381,6 @@ To test simultaneously validates our Memory and Array peripherals. Now to valida
 <br/>
 
 > **Role: RTL Design**
-> 
-> **LinkedIn:** [https://www.linkedin.com/in/sai-sumanth-reddy-chinnasani/](https://www.linkedin.com/in/sai-sumanth-reddy-chinnasani/)
-> 
-> **Email ID**: [chinnasymail.uc.edu](mailto:chinnasy@mail.uc.edu)
-> 
-> **Department: ECE - University of Cincinnati**
 
 <br/>
 
@@ -412,11 +393,5 @@ To test simultaneously validates our Memory and Array peripherals. Now to valida
 <br/>
 
 > **Role: FPGA Implementation**
-> 
-> **LinkedIn:** [https://www.linkedin.com/in/sindhujareddy0428/](https://www.linkedin.com/in/sindhujareddy0428/)
-> 
-> **Email ID**: [gangapsamail.uc.edu](mailto:gangapsa@mail.uc.edu)
-> 
-> **Department: ECE - University of Cincinnati**
 
 <br/>
