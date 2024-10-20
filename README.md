@@ -1,10 +1,10 @@
 
 # Hell Fire SoC Documentation
 
-Version: 2.0 
+Version: 2.1
 Issues: 
 1. Array IP HRESP Width Mismatch - Severity - Minor - Level - IP
-2. Array IP Reset Remap - Severity - Minor - Level - SoC Top
+2. Array IP Reset Remap - Severity - Resolved 
 
 Bug Fixes: 
 1. Data Switch timing fix
